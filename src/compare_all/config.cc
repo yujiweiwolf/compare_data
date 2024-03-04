@@ -41,6 +41,7 @@ namespace co {
         auto feeder = root["compare_all"];
         right_data_ = getStr(feeder, "right_data");
         new_data_ = getStr(feeder, "new_data");
+        compare_instrument_ = getStr(feeder, "compare_instrument");
 
         stringstream ss;
         ss << "+-------------------- configuration begin --------------------+" << endl;
@@ -48,6 +49,7 @@ namespace co {
         ss << endl;
         ss << "  right_data: " << right_data_ << endl
            << "  new_data: " << new_data_ << endl
+           << "  compare_instrument: " << compare_instrument_ << endl
            ;
         ss << "+-------------------- configuration end   --------------------+";
         LOG_INFO << endl << ss.str();

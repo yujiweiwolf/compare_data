@@ -46,7 +46,7 @@ namespace co {
         void CompareTick(MemQTick* right, MemQTick* data);
         void CompareOrder(MemQOrder* right, MemQOrder* data);
         void CompareKnock(MemQKnock* right, MemQKnock* data);
-        void StartMonitor();
+        bool IsNeedInstrument(const string& code);
     private:
         std::vector<std::string> miss_code_;
         std::vector<std::string> diff_code_;
@@ -59,5 +59,6 @@ namespace co {
         atomic<int64_t> mem_num_;
         atomic<bool> stop_flag_;
         std::shared_ptr<std::thread> monitor_thread_;
+        std::set<string> compare_instrument_;
     };
 }

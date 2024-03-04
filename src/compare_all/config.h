@@ -22,6 +22,9 @@ class Config {
     string new_data() {
         return new_data_;
     }
+    string compare_instrument() {
+        return compare_instrument_;
+    }
 
 protected:
     Config() = default;
@@ -36,5 +39,6 @@ protected:
     std::shared_ptr<FeedOptions> opt_;
     string right_data_;
     string new_data_;
+    string compare_instrument_;
 };
 }  // namespace co
