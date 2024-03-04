@@ -1,0 +1,29 @@
+feeder:
+  # push_address: tcp://*:8000
+  push_address: mem:///../data/feed.stock.mem?keep=0,tcp://*:8000
+  sub_date: 0
+  sub_time: -1
+  enable_spot: false
+  enable_future: false
+  enable_option: false
+  enable_order: false
+  enable_knock: false
+  enable_holo: false
+
+# 比较导出的txt
+compare_one:
+  # 正确的数据
+  right_data: /home/work/sys/develop/compare_data/data/feed_20240130_20240131154900857.stockgl_tcp.txt
+  # 新数据
+  new_data: /home/work/sys/develop/compare_data/data/feed_20240130_20240131155639879.stockgl.txt
+
+# 比较全部数据， 可以是wal, 或者mmap
+compare_all:
+  # 正确的数据
+  right_data: /home/work/sys/develop/feeder_huatai_insight/data/feed_20240223.stock.mem
+  # 新数据
+  new_data: /home/work/sys/develop/feeder_guangfa_amd/data/feed_20240223.stock.mem
+
+log:
+  level: info
+  async: false
