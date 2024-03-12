@@ -10,7 +10,7 @@ using namespace std;
 using namespace co;
 namespace po = boost::program_options;
 
-const string kVersion = "v1.0.6";
+const string kVersion = "v1.0.7";
 
 int main(int argc, char* argv[]) {
     po::options_description desc("[Feeder Server] Usage");

@@ -229,7 +229,7 @@ namespace co {
                 if (stamp > 150100000) {
                     valid_flag = false;
                 }
-                if (valid_flag && tick->src == 0) {
+                if (valid_flag && tick->src != 2) {
                     MemQTick mem_tick;
                     memcpy(&mem_tick, tick, sizeof(MemQTick));
                     if (full_data->contract.volume_unit > 0) {
@@ -551,13 +551,13 @@ namespace co {
         if (right->new_volume != data->new_volume) {
             ss << ", right new_volume: " << right->new_volume << ", new new_volume: " << data->new_volume;
         }
-        if (fabs(right->new_amount - data->new_amount) > WUCAI) {
+        if (fabs(right->new_amount - data->new_amount) > 10.0) {
             ss << ", right new_amount: " << right->new_amount << ", new new_amount: " << data->new_amount;
         }
         if (right->sum_volume != data->sum_volume) {
             ss << ", right sum_volume: " << right->sum_volume << ", new sum_volume: " << data->sum_volume;
         }
-        if (fabs(right->sum_amount - data->sum_amount) > WUCAI) {
+        if (fabs(right->sum_amount - data->sum_amount) > 10.0) {
             ss << ", right sum_amount: " << right->sum_amount << ", new sum_amount: " << data->sum_amount;
         }
         if (right->open_interest != data->open_interest) {
