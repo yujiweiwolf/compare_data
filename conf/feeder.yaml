@@ -22,11 +22,13 @@ compare_all:
   # 正确的数据
   right_data: /home/work/sys/develop/feeder_huatai_insight/data/feed_20240312.stock.mem/
   # 新数据
-  new_data: /home/work/sys/develop/feeder_guangfa_amd/data/feed_20240304_20240304142021615.stock.wal
+  new_data: /home/work/sys/develop/feeder_guangfa_amd/data/feed_20240308_20240313093926870.stock.wal
   # 比较合约,必须包含深圳上海的股票、指数、基金、债券、期权、CNI、CSI, 其中债券与期权的代码有变化，每次比较时可能要调整
   # 空值的话， 就是全市场比较
   # compare_instrument:
-  compare_instrument: 000001.SZ|600000.SH|399001.SZ|000001.SH|159949.SZ|510050.SH|113672.SH|127097.SZ|10005803.SH|90003239.SZ|983161.CNI|000018.CSI
+  # compare_instrument: 000001.SZ|600000.SH|399001.SZ|000001.SH|159949.SZ|510050.SH|113672.SH|127097.SZ|10005803.SH|90003239.SZ|983161.CNI|000018.CSI
+  # compare_instrument: 980001.CNI|000018.CSI|000171.CSI|988007.CNI
+  compare_instrument: 980001.CNI
 
 log:
   level: info

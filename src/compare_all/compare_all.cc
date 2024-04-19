@@ -78,7 +78,7 @@ namespace co {
                         if (stamp > 150100000) {
                             valid_flag = false;
                         }
-                        if (valid_flag && q->src() == 0) {
+                        if (valid_flag && q->src() != 2) {
                             MemQTick tick;
                             memset(&tick, 0, sizeof(tick));
                             strncpy(tick.code, std_code.c_str(), std_code.length());
@@ -183,7 +183,7 @@ namespace co {
         shared_ptr<FullDate> full_data;
         void* data = nullptr;
         while (true) {
-            int32_t type = feeder_reader_.Read(&data);
+            int32_t type = feeder_reader_.Next(&data);
             if (type == kMemTypeQContract) {
                 MemQContract *contract = (MemQContract *) data;
                 string std_code = contract->code;
