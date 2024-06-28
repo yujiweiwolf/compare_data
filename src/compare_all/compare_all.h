@@ -47,6 +47,7 @@ namespace co {
         void CompareOrder(MemQOrder* right, MemQOrder* data);
         void CompareKnock(MemQKnock* right, MemQKnock* data);
         bool IsNeedInstrument(const string& code);
+        void CheckSingleCodeData(MemQTick* tick, MemQContract* contract);
     private:
         std::vector<std::string> miss_code_;
         std::vector<std::string> diff_code_;

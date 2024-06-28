@@ -1,7 +1,11 @@
-#include "compare_all.h"
-#include <regex>
 
-#define WUCAI 0.0001
+#include <regex>
+#include <boost/program_options.hpp>
+#include <boost/filesystem.hpp>
+#include "compare_all.h"
+namespace po = boost::program_options;
+
+#define WUCAI 0.000001
 
 namespace co {
     CompareAllCode::CompareAllCode() {
@@ -20,7 +24,14 @@ namespace co {
         return flag;
     }
 
-    void CompareAllCode::ReadWalFile(const string& file, unordered_map<std::string, shared_ptr<FullDate>>& data){
+    void CompareAllCode::ReadWalFile(const string& file, unordered_map<std::string, shared_ptr<FullDate>>& data) {
+        if (file.empty()) {
+            return;
+        }
+        if (!boost::filesystem::exists(file)) {
+            LOG_ERROR << "not exit file: " << file;
+            return;
+        }
         co::WALReader reader;
         reader.Open(file.c_str());
         while (true) {
@@ -116,6 +127,7 @@ namespace co {
                             tick.close = q->close();
                             tick.settle = q->settle();
                             tick.open_interest = q->open_interest();
+                            CheckSingleCodeData(&tick, &full_data->contract);
                             full_data->mmap_tick->insert(std::make_pair(timestamp, tick));
                         }
                     }
@@ -173,6 +185,28 @@ namespace co {
                      << ", tick num: " << it->second->mmap_tick->size()
                      << ", order num: " << it->second->mmap_order->size()
                      << ", knock num: " << it->second->mmap_knock->size();
+            int64_t sum_volume = 0;
+            int64_t sum_amout = 0;
+            for (auto& itor : *it->second->mmap_knock) {
+                sum_volume += itor.second.match_volume;
+                sum_amout += itor.second.match_price * itor.second.match_volume;
+            }
+            if (sum_volume > 0 && sum_amout > 0) {
+                for (auto& itor : *it->second->mmap_tick) {
+                    int64_t stamp = itor.second.timestamp % 1000000000LL;
+                    if (stamp > 150000000) {
+                        MemQTick& tick = itor.second;
+                        if ((tick.sum_volume != sum_volume) ||  fabs(tick.sum_amount - i2f(sum_amout)) > 100) {
+                            LOG_ERROR << "code: " << tick.code << ", timestamp: " << tick.timestamp
+                                      << ", sum_volume: " << tick.sum_volume
+                                      << ", sum_amount: " << tick.sum_amount
+                                      << ", 逐笔成交累计volume: " << sum_volume
+                                      << ", 逐笔成交累计amount: " << i2f(sum_amout);
+                        }
+                        break;
+                    }
+                }
+            }
         }
     }
 
@@ -181,7 +215,7 @@ namespace co {
         feeder_reader_.Open(dir, "meta");
         feeder_reader_.Open(dir, "data");
         shared_ptr<FullDate> full_data;
-        void* data = nullptr;
+        const void* data = nullptr;
         while (true) {
             int32_t type = feeder_reader_.Next(&data);
             if (type == kMemTypeQContract) {
@@ -240,6 +274,7 @@ namespace co {
                         mem_tick.sum_volume /= full_data->contract.volume_unit;
                         mem_tick.new_volume /= full_data->contract.volume_unit;
                     }
+                    CheckSingleCodeData(&mem_tick, &full_data->contract);
                     full_data->mmap_tick->insert(std::make_pair(timestamp, mem_tick));
                 }
             } else if (type == kMemTypeQOrder) {
@@ -303,6 +338,28 @@ namespace co {
                      << ", tick num: " << it->second->mmap_tick->size()
                      << ", order num: " << it->second->mmap_order->size()
                      << ", knock num: " << it->second->mmap_knock->size();
+            int64_t sum_volume = 0;
+            int64_t sum_amout = 0;
+            for (auto& itor : *it->second->mmap_knock) {
+                sum_volume += itor.second.match_volume;
+                sum_amout += itor.second.match_price * itor.second.match_volume;
+            }
+            if (sum_volume > 0 && sum_amout > 0) {
+                for (auto& itor : *it->second->mmap_tick) {
+                    int64_t stamp = itor.second.timestamp % 1000000000LL;
+                    if (stamp > 150000000) {
+                        MemQTick& tick = itor.second;
+                        if ((tick.sum_volume != sum_volume) ||  fabs(tick.sum_amount - i2f(sum_amout)) > 100) {
+                            LOG_ERROR << "code: " << tick.code << ", timestamp: " << tick.timestamp
+                                      << ", sum_volume: " << tick.sum_volume
+                                      << ", sum_amount: " << tick.sum_amount
+                                      << ", 逐笔成交累计volume: " << sum_volume
+                                      << ", 逐笔成交累计amount: " << i2f(sum_amout);
+                        }
+                        break;
+                    }
+                }
+            }
         }
     }
 
@@ -690,6 +747,82 @@ namespace co {
                 LOG_ERROR << ss.str();
             }
             statistics->knock_diff ++;
+        }
+    }
+
+    // 检查盘口
+    void CompareAllCode::CheckSingleCodeData(MemQTick* tick, MemQContract* contract) {
+//        // 测试用
+//        if (tick->timestamp == 20240619094926000) {
+//            tick->bp[0] = 9.61;
+//            tick->bp[1] = 8.61;
+//            tick->bv[3] = 0;
+//            tick->ap[1] = 8.67;
+//            tick->av[3] = 0;
+//        }
+        if (tick->ap[0] > 0 && tick->bp[0] > 0 && (tick->bp[0] - tick->ap[0]) > WUCAI) {
+            LOG_ERROR << "检查盘口, code: " << tick->code << ", timestamp: " << tick->timestamp
+                      << ", 买1价大于卖一价 "
+                      << ", ap[0]: " << tick->ap[0]  << ", bp[0]: " << tick->bp[0];
+        }
+        for (int i = 0; i < 8; i++) {
+            if (tick->ap[i] > 0 && (tick->ap[i] - contract->upper_limit) > WUCAI) {
+                LOG_ERROR << "检查盘口, code: " << tick->code << ", timestamp: " << tick->timestamp
+                                << ", 卖价大于涨停价，i: " << i
+                                << ", ap[i]: " << tick->ap[i] << ", upper_limit: " << contract->upper_limit;
+            }
+            if (tick->av[i] < 0 || tick->av[i + 1] < 0 || tick->ap[i] < 0 || tick->ap[i + 1] < 0) {
+                LOG_ERROR << "检查盘口, code: " << tick->code << ", timestamp: " << tick->timestamp
+                          << ", 卖盘口数据不正常，i: " << i
+                          << ", av[i]: " << tick->av[i] << ", av[i + 1]: " << tick->av[i + 1]
+                          << ", ap[i]: " << tick->ap[i] << ", ap[i + 1]: " << tick->ap[i + 1];
+            }
+            if (i != 1) {
+                if ((tick->av[i] > 0 && tick->ap[i] <= WUCAI) || (tick->av[i] == 0 && tick->ap[i] > 0) ){
+                    LOG_ERROR << "检查盘口, code: " << tick->code << ", timestamp: " << tick->timestamp
+                              << ", 卖盘口数据不正常，i: " << i
+                              << ", av[i]: " << tick->av[i] << ", ap[i]: " << tick->ap[i];
+                }
+            }
+            if (tick->av[i] > 0 && tick->av[i + 1] > 0) {
+                if ((tick->ap[i] - tick->ap[i + 1] > WUCAI)  || fabs(tick->ap[i] - tick->ap[i + 1]) <= WUCAI) {  // ap变小
+                    if (i != 0) {
+                        LOG_ERROR << "检查盘口, code: " << tick->code << ", timestamp: " << tick->timestamp
+                                << ", 卖盘口价格没变大, i: " << i
+                                << ", ap[i]: " << tick->ap[i] << ", ap[i + 1]: " << tick->ap[i + 1];
+                    }
+                }
+            }
+        }
+
+        for (int i = 0; i < 8; i++) {
+            if (tick->bp[i] > 0 && (contract->lower_limit - tick->bp[i]) > WUCAI) {
+                LOG_ERROR << "检查盘口, code: " << tick->code << ", timestamp: " << tick->timestamp
+                          << ", 买价小于跌停价，i: " << i
+                          << ", bp[i]: " << tick->bp[i] << ", lower_limit: " << contract->lower_limit;
+            }
+            if (tick->bv[i] < 0 || tick->bv[i + 1] < 0 || tick->bp[i] < 0 || tick->bp[i + 1] < 0) {
+                LOG_ERROR << "检查盘口, code: " << tick->code << ", timestamp: " << tick->timestamp
+                          << ", 买盘口数据不正常，i: " << i
+                          << ", bv[i]: " << tick->bv[i] << ", bv[i + 1]: " << tick->bv[i + 1]
+                          << ", bp[i]: " << tick->bp[i] << ", bp[i + 1]: " << tick->bp[i + 1];
+            }
+            if (i != 1) {
+                if ((tick->bv[i] > 0 && tick->bp[i] <= WUCAI) || (tick->bv[i] == 0 && tick->bp[i] > 0) ){
+                    LOG_ERROR << "检查盘口, code: " << tick->code << ", timestamp: " << tick->timestamp
+                              << ", 买盘口数据不正常，i: " << i
+                              << ", bv[i]: " << tick->bv[i] << ", bp[i]: " << tick->bp[i];
+                }
+            }
+            if (tick->bv[i] > 0 && tick->bv[i + 1] > 0) {
+                if ((tick->bp[i] - tick->bp[i + 1] < WUCAI)  || fabs(tick->bp[i] - tick->bp[i + 1]) <= WUCAI) {  // bp变大
+                    if (i != 0) {
+                        LOG_ERROR << "检查盘口, code: " << tick->code << ", timestamp: " << tick->timestamp
+                                  << ", 买盘口价格没变小, i: " << i
+                                  << ", bp[i]: " << tick->bp[i] << ", bp[i + 1]: " << tick->bp[i + 1];
+                    }
+                }
+            }
         }
     }
 }
