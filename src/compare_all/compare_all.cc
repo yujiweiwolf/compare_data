@@ -89,6 +89,15 @@ namespace co {
                         if (stamp > 150100000) {
                             valid_flag = false;
                         }
+                        if (x::Ne(q->pre_close(), full_data->contract.pre_close)) {
+                            full_data->contract.pre_close = q->pre_close();
+                        }
+                        if (x::Ne(q->upper_limit(), full_data->contract.upper_limit)) {
+                            full_data->contract.upper_limit = q->upper_limit();
+                        }
+                        if (x::Ne(q->lower_limit(), full_data->contract.lower_limit)) {
+                            full_data->contract.lower_limit = q->lower_limit();
+                        }
                         if (valid_flag && q->src() != 2) {
                             MemQTick tick;
                             memset(&tick, 0, sizeof(tick));
@@ -218,38 +227,37 @@ namespace co {
             }
         }
         // 测试用
-        {
-            LOG_INFO << "start check code param";
-            int64_t start_time = x::RawDateTime();
-            int num = 0;
-            for (auto it = data.begin(); it != data.end(); ++it) {
-                map<int64_t, MemQTick>& mmap_tick = *it->second->mmap_tick;
-                for (auto& itor : mmap_tick) {
-                    CheckSingleCodeData(&itor.second, &it->second->contract);
-                    num ++;
-                }
-            }
-            int64_t end_time = x::RawDateTime();
-            LOG_INFO << "start_time: " << start_time << ", end_time: " << end_time;
-            LOG_INFO << "end check code param, num: " << num << ", dealy: " << x::SubRawDateTime(end_time, start_time);
-        }
-
-        {
-            LOG_INFO << "不处理数据, start check code param";
-            int64_t start_time = x::RawDateTime();
-            int num = 0;
-            for (auto it = data.begin(); it != data.end(); ++it) {
-                map<int64_t, MemQTick>& mmap_tick = *it->second->mmap_tick;
-                for (auto& itor : mmap_tick) {
-                    // CheckSingleCodeData(&itor.second, &it->second->contract);
-                    num ++;
-                }
-            }
-            int64_t end_time = x::RawDateTime();
-            LOG_INFO << "start_time: " << start_time << ", end_time: " << end_time;
-            LOG_INFO << "end check code param, num: " << num << ", dealy: " << x::SubRawDateTime(end_time, start_time);
-        }
-
+//        {
+//            LOG_INFO << "start check code param";
+//            int64_t start_time = x::RawDateTime();
+//            int num = 0;
+//            for (auto it = data.begin(); it != data.end(); ++it) {
+//                map<int64_t, MemQTick>& mmap_tick = *it->second->mmap_tick;
+//                for (auto& itor : mmap_tick) {
+//                    CheckSingleCodeData(&itor.second, &it->second->contract);
+//                    num ++;
+//                }
+//            }
+//            int64_t end_time = x::RawDateTime();
+//            LOG_INFO << "start_time: " << start_time << ", end_time: " << end_time;
+//            LOG_INFO << "end check code param, num: " << num << ", dealy: " << x::SubRawDateTime(end_time, start_time);
+//        }
+//
+//        {
+//            LOG_INFO << "不处理数据, start check code param";
+//            int64_t start_time = x::RawDateTime();
+//            int num = 0;
+//            for (auto it = data.begin(); it != data.end(); ++it) {
+//                map<int64_t, MemQTick>& mmap_tick = *it->second->mmap_tick;
+//                for (auto& itor : mmap_tick) {
+//                    // CheckSingleCodeData(&itor.second, &it->second->contract);
+//                    num ++;
+//                }
+//            }
+//            int64_t end_time = x::RawDateTime();
+//            LOG_INFO << "start_time: " << start_time << ", end_time: " << end_time;
+//            LOG_INFO << "end check code param, num: " << num << ", dealy: " << x::SubRawDateTime(end_time, start_time);
+//        }
     }
 
     void CompareAllCode::ReadMemFile(const string& dir, unordered_map<std::string, shared_ptr<FullDate>>& recode) {
@@ -618,9 +626,9 @@ namespace co {
         if (right->cp_flag != data->cp_flag) {
             ss << ", cp_flag, right: " << right->cp_flag << ", new: " << data->cp_flag;
         }
-        if (right->volume_unit != data->volume_unit) {
-            ss << ", volume_unit, right: " << right->volume_unit << ", new: " << data->volume_unit;
-        }
+//        if (right->volume_unit != data->volume_unit) {
+//            ss << ", volume_unit, right: " << right->volume_unit << ", new: " << data->volume_unit;
+//        }
         string err_msg = ss.str();
         if (err_msg.find("right") != err_msg.npos) {
             LOG_ERROR << ss.str();
@@ -667,6 +675,12 @@ namespace co {
         }
         if (fabs(right->close - data->close) > WUCAI) {
             ss << ", right close: " << right->close << ", new close: " << data->close;
+        }
+        if (fabs(right->high - data->high) > WUCAI) {
+            ss << ", right high: " << right->high << ", new high: " << data->high;
+        }
+        if (fabs(right->low - data->low) > WUCAI) {
+            ss << ", right low: " << right->low << ", new low: " << data->low;
         }
         if (fabs(right->settle - data->settle) > WUCAI) {
             ss << ", right settle: " << right->settle << ", new settle: " << data->settle;

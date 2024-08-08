@@ -20,9 +20,9 @@ compare_one:
 # 比较全部数据， 可以是wal, 或者mmap
 compare_all:
   # 正确的数据
-  right_data: /home/work/sys/develop/compare_data/data/feed_20240703_000001.SZ.wal
+  right_data: /home/work/sys/develop/write_read_mmap/data
   # 新数据
-  new_data: /home/work/sys/develop/feeder_dwzq_wind_v_1.0/data/feed_20240627_20240627111921384.stockaaa.wal
+  new_data: /home/work/sys/develop/compare_data/data/feed_20240703_20240704105617470.stockszudp.wal
   # 比较合约,必须包含深圳上海的股票、指数、基金、债券、期权、CNI、CSI, 其中债券与期权的代码有变化，每次比较时可能要调整
   # 空值的话， 就是全市场比较
   # compare_instrument:
