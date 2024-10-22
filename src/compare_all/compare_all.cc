@@ -71,7 +71,7 @@ namespace co {
                             full_data->contract.volume_unit = 0;
 
                             full_data->mmap_tick = std::make_shared<map<int64_t, MemQTick>>();
-                            full_data->mmap_order = std::make_shared<map<int64_t, MemQOrder>>();
+                            full_data->mmap_order = std::make_shared<map<string, MemQOrder>>();
                             full_data->mmap_knock = std::make_shared<map<int64_t, MemQKnock>>();
                             data.insert(std::make_pair(std_code, full_data));
                         } else {
@@ -159,7 +159,8 @@ namespace co {
                         order.order_type = q->order_type();
                         order.order_price = q->order_price();
                         order.order_volume = q->order_volume();
-                        full_data->mmap_order->insert(std::make_pair(order_no, order));
+                        string key = std::to_string(order.order_no) + "_" + std::to_string(order.order_type);
+                        full_data->mmap_order->insert(std::make_pair(key, order));
                     }
                     break;
                 }
@@ -278,7 +279,7 @@ namespace co {
                         memset(&full_data->contract, 0, sizeof(full_data->contract));
                         memcpy(&full_data->contract, contract, sizeof(MemQContract));
                         full_data->mmap_tick = std::make_shared<map<int64_t, MemQTick>>();
-                        full_data->mmap_order = std::make_shared<map<int64_t, MemQOrder>>();
+                        full_data->mmap_order = std::make_shared<map<string, MemQOrder>>();
                         full_data->mmap_knock = std::make_shared<map<int64_t, MemQKnock>>();
                         recode.insert(std::make_pair(std_code, full_data));
                     } else {
@@ -349,7 +350,8 @@ namespace co {
                     if (full_data->contract.volume_unit > 0) {
                         mem_order.order_volume /= full_data->contract.volume_unit;
                     }
-                    full_data->mmap_order->insert(std::make_pair(order_no, mem_order));
+                    string key = std::to_string(mem_order.order_no) + "_" + std::to_string(mem_order.order_type);
+                    full_data->mmap_order->insert(std::make_pair(key, mem_order));
                 }
             } else if (type == kMemTypeQKnock) {
                 MemQKnock *knock = (MemQKnock *) data;
@@ -708,10 +710,10 @@ namespace co {
 
     void CompareAllCode::CompareOrder(MemQOrder* right, MemQOrder* data) {
         stringstream ss;
-        ss << "order code: " << right->code << ", timestamp: " << right->timestamp;
-        if (right->order_no != data->order_no) {
-            ss << ", right order_no: " << right->order_no << ", new order_no: " << data->order_no;
-        }
+        ss << "order code: " << right->code << ", timestamp: " << right->timestamp << ", order_no: " << right->order_no;
+//        if (right->order_no != data->order_no) {
+//            ss << ", right order_no: " << right->order_no << ", new order_no: " << data->order_no;
+//        }
 
         if (right->order_type == 0 && right->order_price != data->order_price) {
             ss << ", right order_price: " << right->order_price << ", new order_price: " << data->order_price;

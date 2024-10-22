@@ -17,7 +17,7 @@ namespace co {
 
     struct FullDate {
         shared_ptr<map<int64_t, MemQTick>> mmap_tick;
-        shared_ptr<map<int64_t, MemQOrder>> mmap_order;
+        shared_ptr<map<string, MemQOrder>> mmap_order;  // key is order_no + "_" + order_type
         shared_ptr<map<int64_t, MemQKnock>> mmap_knock;
         MemQContract contract;
     };
