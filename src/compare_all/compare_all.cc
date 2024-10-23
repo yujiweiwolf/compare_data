@@ -89,13 +89,13 @@ namespace co {
                         if (stamp > 150100000) {
                             valid_flag = false;
                         }
-                        if (x::Ne(q->pre_close(), full_data->contract.pre_close)) {
+                        if (q->pre_close() > 0 && x::Ne(q->pre_close(), full_data->contract.pre_close)) {
                             full_data->contract.pre_close = q->pre_close();
                         }
-                        if (x::Ne(q->upper_limit(), full_data->contract.upper_limit)) {
+                        if (q->upper_limit() > 0 && x::Ne(q->upper_limit(), full_data->contract.upper_limit)) {
                             full_data->contract.upper_limit = q->upper_limit();
                         }
-                        if (x::Ne(q->lower_limit(), full_data->contract.lower_limit)) {
+                        if (q->lower_limit() > 0 && x::Ne(q->lower_limit(), full_data->contract.lower_limit)) {
                             full_data->contract.lower_limit = q->lower_limit();
                         }
                         if (valid_flag && q->src() != 2) {
@@ -285,12 +285,12 @@ namespace co {
                     } else {
                         full_data = it->second;
                         memcpy(&full_data->contract, contract, sizeof(MemQContract));
-                        if (full_data->contract.upper_limit > 900000) {
-                            full_data->contract.upper_limit = 0;
-                        }
-                        if (full_data->contract.lower_limit < 0.1) {
-                            full_data->contract.lower_limit = 0;
-                        }
+//                        if (full_data->contract.upper_limit > 900000) {
+//                            full_data->contract.upper_limit = 0;
+//                        }
+//                        if (full_data->contract.lower_limit < 0.1) {
+//                            full_data->contract.lower_limit = 0;
+//                        }
                     }
                 }
             } else if (type == kMemTypeQTick) {
