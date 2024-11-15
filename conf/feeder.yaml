@@ -20,8 +20,8 @@ compare_one:
 # 比较全部数据， 可以是wal, 或者mmap
 compare_all:
   # 正确的数据
-  # right_data: /home/work/sys/develop/write_read_mmap/data
-  right_data: /home/work/sys/develop/compare_data/data/feed_20241021_20241022143734597.stock.wal
+  right_data: /home/work/sys/develop/feeder_huatai_insight/data/feed.stock.mem
+  #right_data: /home/work/sys/develop/compare_data/data/feed_20241021_20241022143734597.stock.wal
   # 新数据
   new_data: /home/work/sys/develop/compare_data/data/feed_20241021_20241022143808648.stock.wal
   # 比较合约,必须包含深圳上海的股票、指数、基金、债券、期权、CNI、CSI, 其中债券与期权的代码有变化，每次比较时可能要调整

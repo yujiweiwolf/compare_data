@@ -16,10 +16,10 @@ namespace co {
     using namespace std;
 
     struct FullDate {
-        shared_ptr<map<int64_t, MemQTick>> mmap_tick;
+        shared_ptr<map<int64_t, MemQTickBody>> mmap_tick;
         shared_ptr<map<int64_t, MemQOrder>> mmap_order;
         shared_ptr<map<int64_t, MemQKnock>> mmap_knock;
-        MemQContract contract;
+        MemQTickHead contract;
     };
 
     struct StatisticsData {
@@ -47,8 +47,8 @@ namespace co {
         void ParseQOrderFromMem(const string& line, unordered_map<std::string, shared_ptr<FullDate>>& data);
         void ParseQKnockFromMem(const string& line, unordered_map<std::string, shared_ptr<FullDate>>& data);
 
-        void CompareContract(MemQContract* right, MemQContract* data);
-        void CompareTick(MemQTick* right, MemQTick* data);
+        void CompareContract(MemQTickHead* right, MemQTickHead* data);
+        void CompareTick(MemQTickBody* right, MemQTickBody* data);
         void CompareOrder(MemQOrder* right, MemQOrder* data);
         void CompareKnock(MemQKnock* right, MemQKnock* data);
     private:

@@ -51,7 +51,7 @@ namespace co {
                         auto it = data.find(std_code);
                         if (it == data.end()) {
                             full_data = std::make_shared<FullDate>();
-                            memset(&full_data->contract, 0, sizeof(MemQContract));
+                            memset(&full_data->contract, 0, sizeof(MemQTickHead));
                             strncpy(full_data->contract.code, std_code.c_str(), std_code.length());
                             full_data->contract.timestamp = q->timestamp();
                             full_data->contract.market = q->market();
@@ -70,7 +70,7 @@ namespace co {
                             full_data->contract.cp_flag = q->cp_flag();
                             full_data->contract.volume_unit = 0;
 
-                            full_data->mmap_tick = std::make_shared<map<int64_t, MemQTick>>();
+                            full_data->mmap_tick = std::make_shared<map<int64_t, MemQTickBody>>();
                             full_data->mmap_order = std::make_shared<map<string, MemQOrder>>();
                             full_data->mmap_knock = std::make_shared<map<int64_t, MemQKnock>>();
                             data.insert(std::make_pair(std_code, full_data));
@@ -89,6 +89,9 @@ namespace co {
                         if (stamp > 150100000) {
                             valid_flag = false;
                         }
+                        if (compare_date_ == 0) {
+                            compare_date_ = timestamp / 1000000000LL;
+                        }
                         if (q->pre_close() > 0 && x::Ne(q->pre_close(), full_data->contract.pre_close)) {
                             full_data->contract.pre_close = q->pre_close();
                         }
@@ -99,7 +102,7 @@ namespace co {
                             full_data->contract.lower_limit = q->lower_limit();
                         }
                         if (valid_flag && q->src() != 2) {
-                            MemQTick tick;
+                            MemQTickBody tick;
                             memset(&tick, 0, sizeof(tick));
                             strncpy(tick.code, std_code.c_str(), std_code.length());
                             tick.timestamp = q->timestamp();
@@ -133,8 +136,8 @@ namespace co {
                             tick.open = q->open();
                             tick.high = q->high();
                             tick.low = q->low();
-                            tick.close = q->close();
-                            tick.settle = q->settle();
+                            full_data->contract.close = q->close();
+                            full_data->contract.settle = q->settle();
                             tick.open_interest = q->open_interest();
                             CheckSingleCodeData(&tick, &full_data->contract);
                             full_data->mmap_tick->insert(std::make_pair(timestamp, tick));
@@ -212,7 +215,7 @@ namespace co {
                 }
                 int64_t stamp = max_timestamp % 1000000000LL;
                 if (stamp > 150000000) {
-                    MemQTick& tick = (*it->second->mmap_tick)[max_timestamp];
+                    MemQTickBody& tick = (*it->second->mmap_tick)[max_timestamp];
                     //  fabs(tick.sum_amount - i2f(sum_amout)) > (tick.sum_amount * 0.01)
                     //  不比较 sum_amout
                     if (tick.sum_volume != sum_volume) {
@@ -233,7 +236,7 @@ namespace co {
 //            int64_t start_time = x::RawDateTime();
 //            int num = 0;
 //            for (auto it = data.begin(); it != data.end(); ++it) {
-//                map<int64_t, MemQTick>& mmap_tick = *it->second->mmap_tick;
+//                map<int64_t, MemQTickBody>& mmap_tick = *it->second->mmap_tick;
 //                for (auto& itor : mmap_tick) {
 //                    CheckSingleCodeData(&itor.second, &it->second->contract);
 //                    num ++;
@@ -249,7 +252,7 @@ namespace co {
 //            int64_t start_time = x::RawDateTime();
 //            int num = 0;
 //            for (auto it = data.begin(); it != data.end(); ++it) {
-//                map<int64_t, MemQTick>& mmap_tick = *it->second->mmap_tick;
+//                map<int64_t, MemQTickBody>& mmap_tick = *it->second->mmap_tick;
 //                for (auto& itor : mmap_tick) {
 //                    // CheckSingleCodeData(&itor.second, &it->second->contract);
 //                    num ++;
@@ -262,6 +265,9 @@ namespace co {
     }
 
     void CompareAllCode::ReadMemFile(const string& dir, unordered_map<std::string, shared_ptr<FullDate>>& recode) {
+        if (compare_date_ == 0) {
+            compare_date_ = x::RawDate();
+        }
         x::MMapReader feeder_reader_;
         feeder_reader_.Open(dir, "meta");
         feeder_reader_.Open(dir, "data");
@@ -269,22 +275,23 @@ namespace co {
         const void* data = nullptr;
         while (true) {
             int32_t type = feeder_reader_.Next(&data);
-            if (type == kMemTypeQContract) {
-                MemQContract *contract = (MemQContract *) data;
+            if (type == kMemTypeQTickHead) {
+                MemQTickHead *contract = (MemQTickHead *) data;
                 string std_code = contract->code;
-                if (IsNeedInstrument(std_code)) {
+                int64_t date = contract->timestamp / 1000000000LL;
+                if (IsNeedInstrument(std_code) && date == compare_date_) {
                     auto it = recode.find(std_code);
                     if (it == recode.end()) {
                         full_data = std::make_shared<FullDate>();
                         memset(&full_data->contract, 0, sizeof(full_data->contract));
-                        memcpy(&full_data->contract, contract, sizeof(MemQContract));
-                        full_data->mmap_tick = std::make_shared<map<int64_t, MemQTick>>();
+                        memcpy(&full_data->contract, contract, sizeof(MemQTickHead));
+                        full_data->mmap_tick = std::make_shared<map<int64_t, MemQTickBody>>();
                         full_data->mmap_order = std::make_shared<map<string, MemQOrder>>();
                         full_data->mmap_knock = std::make_shared<map<int64_t, MemQKnock>>();
                         recode.insert(std::make_pair(std_code, full_data));
                     } else {
                         full_data = it->second;
-                        memcpy(&full_data->contract, contract, sizeof(MemQContract));
+                        memcpy(&full_data->contract, contract, sizeof(MemQTickHead));
 //                        if (full_data->contract.upper_limit > 900000) {
 //                            full_data->contract.upper_limit = 0;
 //                        }
@@ -293,8 +300,8 @@ namespace co {
 //                        }
                     }
                 }
-            } else if (type == kMemTypeQTick) {
-                MemQTick *tick = (MemQTick *) data;
+            } else if (type == kMemTypeQTickBody) {
+                MemQTickBody *tick = (MemQTickBody *) data;
                 string std_code = tick->code;
                 auto it = recode.find(std_code);
                 if (it == recode.end()) {
@@ -303,6 +310,7 @@ namespace co {
                     full_data = it->second;
                 }
                 int64_t timestamp = tick->timestamp;
+                int64_t date = timestamp / 1000000000LL;
                 int stamp = timestamp % 1000000000LL;
                 bool valid_flag = true;
                 if (stamp < 91500000) {
@@ -314,9 +322,12 @@ namespace co {
                 if (stamp > 150100000) {
                     valid_flag = false;
                 }
+                if (date != compare_date_) {
+                    valid_flag = false;
+                }
                 if (valid_flag && tick->src != 2) {
-                    MemQTick mem_tick;
-                    memcpy(&mem_tick, tick, sizeof(MemQTick));
+                    MemQTickBody mem_tick;
+                    memcpy(&mem_tick, tick, sizeof(MemQTickBody));
                     if (full_data->contract.volume_unit > 0) {
                         for (int i = 0; i < 10; i++) {
                             mem_tick.av[i] /= full_data->contract.volume_unit;
@@ -330,9 +341,10 @@ namespace co {
                 }
             } else if (type == kMemTypeQOrder) {
                 MemQOrder *order = (MemQOrder *) data;
+                int64_t date = order->timestamp / 1000000000LL;
                 string std_code = order->code;
                 auto it = recode.find(std_code);
-                if (it != recode.end()) {
+                if (it != recode.end() && date == compare_date_) {
 //                    if (strcmp(order->code, "600848.SH") == 0) {
 //                        LOG_INFO << "From mem, QOrder{timestamp: " << order->timestamp
 //                                 << ", code: " << order->code
@@ -365,9 +377,10 @@ namespace co {
 //                              << ", match_volume: " << knock->match_volume
 //                              << "}";
 //                }
+                int64_t date = knock->timestamp / 1000000000LL;
                 string std_code = knock->code;
                 auto it = recode.find(std_code);
-                if (it != recode.end()) {
+                if (it != recode.end() && date == compare_date_) {
                     full_data = it->second;
                     int64_t match_no = knock->match_no;
                     MemQKnock mem_knock;
@@ -400,7 +413,7 @@ namespace co {
                 for (auto& itor : *it->second->mmap_tick) {
                     int64_t stamp = itor.second.timestamp % 1000000000LL;
                     if (stamp > 150000000) {
-                        MemQTick& tick = itor.second;
+                        MemQTickBody& tick = itor.second;
                         if ((tick.sum_volume != sum_volume) ||  fabs(tick.sum_amount - i2f(sum_amout)) > 100) {
                             LOG_ERROR << "code: " << tick.code << ", timestamp: " << tick.timestamp
                                       << ", sum_volume: " << tick.sum_volume
@@ -483,12 +496,12 @@ namespace co {
                     if (_it == new_tick->end()) {
                         statistics->tick_miss ++;
                         if (statistics->order_miss <= 10) {
-                            MemQTick& tick = iter->second;
+                            MemQTickBody& tick = iter->second;
                             LOG_TRACE << "miss tick, code: " << tick.code << ", timestamp: " << tick.timestamp;
                         }
                     } else {
-                        MemQTick& right_tick = iter->second;
-                        MemQTick& new_tick = _it->second;
+                        MemQTickBody& right_tick = iter->second;
+                        MemQTickBody& new_tick = _it->second;
                         CompareTick(&right_tick, &new_tick);
                     }
                 }
@@ -592,7 +605,7 @@ namespace co {
         }
     }
 
-    void CompareAllCode::CompareContract(MemQContract* right, MemQContract* data) {
+    void CompareAllCode::CompareContract(MemQTickHead* right, MemQTickHead* data) {
         stringstream ss;
         ss << "Contract code: " << right->code;
         if (strcmp(right->underlying_code, data->underlying_code) != 0) {
@@ -609,6 +622,12 @@ namespace co {
         }
         if (fabs(right->pre_settle - data->pre_settle) > WUCAI) {
             ss << ", pre_settle, right: " << right->pre_settle << ", new: " << data->pre_settle;
+        }
+        if (fabs(right->close - data->close) > WUCAI) {
+            ss << ", right close: " << right->close << ", new close: " << data->close;
+        }
+        if (fabs(right->settle - data->settle) > WUCAI) {
+            ss << ", right settle: " << right->settle << ", new settle: " << data->settle;
         }
         if (right->pre_open_interest != data->pre_open_interest) {
             ss << ", pre_open_interest, right: " << right->pre_open_interest << ", new: " << data->pre_open_interest;
@@ -637,7 +656,7 @@ namespace co {
         }
     }
 
-    void CompareAllCode::CompareTick(MemQTick* right, MemQTick* data) {
+    void CompareAllCode::CompareTick(MemQTickBody* right, MemQTickBody* data) {
         stringstream ss;
         ss << "tick code: " << right->code << ", timestamp: " << right->timestamp;
         for (int i = 0; i < 10; i++) {
@@ -675,17 +694,11 @@ namespace co {
         if (fabs(right->open - data->open) > WUCAI) {
             ss << ", right open: " << right->open << ", new open: " << data->open;
         }
-        if (fabs(right->close - data->close) > WUCAI) {
-            ss << ", right close: " << right->close << ", new close: " << data->close;
-        }
         if (fabs(right->high - data->high) > WUCAI) {
             ss << ", right high: " << right->high << ", new high: " << data->high;
         }
         if (fabs(right->low - data->low) > WUCAI) {
             ss << ", right low: " << right->low << ", new low: " << data->low;
-        }
-        if (fabs(right->settle - data->settle) > WUCAI) {
-            ss << ", right settle: " << right->settle << ", new settle: " << data->settle;
         }
         if (right->state != data->state) {
             ss << ", right state: " << right->state << ", new state: " << data->state;
@@ -809,7 +822,7 @@ namespace co {
     }
 
     // 检查盘口
-    void CompareAllCode::CheckSingleCodeData(MemQTick* tick, MemQContract* contract) {
+    void CompareAllCode::CheckSingleCodeData(MemQTickBody* tick, MemQTickHead* contract) {
         // 测试用
 //        if (tick->timestamp == 20240619094926000) {
 //            tick->bp[0] = 9.61;

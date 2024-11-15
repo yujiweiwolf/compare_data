@@ -1,5 +1,5 @@
 # cmake_minimum_required(VERSION <specify CMake version here>)
-cmake_minimum_required(VERSION 3.19)
+cmake_minimum_required(VERSION 3.16)
 project(compare_data)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -21,9 +21,9 @@ include_directories(${FEEDER_INCLUDE_DIRS})
 link_directories(${FEEDER_LIBRARY_DIRS})
 message("*****************************************")
 
-aux_source_directory (./src/compare_one COMPAREONE)
-add_executable(compare_one ${COMPAREONE})
-target_link_libraries(compare_one ${FEEDER_LIBRARIES} ${CORAL_LIBRARIES} ${X_LIBRARIES} boost_program_options protobuf protobuf-lite)
+#aux_source_directory (./src/compare_one COMPAREONE)
+#add_executable(compare_one ${COMPAREONE})
+#target_link_libraries(compare_one ${FEEDER_LIBRARIES} ${CORAL_LIBRARIES} ${X_LIBRARIES} boost_program_options protobuf protobuf-lite)
 
 SET(FEEDER compare_all_instrument)
 aux_source_directory (./src/compare_all COMPAREONE_ALL)

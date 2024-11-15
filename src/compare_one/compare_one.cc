@@ -46,12 +46,12 @@ namespace co {
                         }
                         statistics->tick_miss ++;
                         if (statistics->order_miss <= 10) {
-                            MemQTick& tick = iter->second;
+                            MemQTickBody& tick = iter->second;
                             LOG_INFO << "miss tick, code: " << tick.code << ", timestamp: " << tick.timestamp;
                         }
                     } else {
-                        MemQTick& right_tick = iter->second;
-                        MemQTick& new_tick = _it->second;
+                        MemQTickBody& right_tick = iter->second;
+                        MemQTickBody& new_tick = _it->second;
                         CompareTick(&right_tick, &new_tick);
                     }
                 }
@@ -150,7 +150,7 @@ namespace co {
             auto it = data.find(std_code);
             if (it == data.end()) {
                 full_data = std::make_shared<FullDate>();
-                memset(&full_data->contract, 0, sizeof(MemQContract));
+                memset(&full_data->contract, 0, sizeof(MemQTickHead));
                 strncpy(full_data->contract.code, std_code.c_str(), std_code.length());
                 full_data->contract.timestamp = timestamp;
                 full_data->contract.market = atoll(m[6].str().c_str());
@@ -159,14 +159,14 @@ namespace co {
                 full_data->contract.upper_limit = atof(m[8].str().c_str());
                 full_data->contract.lower_limit = atof(m[9].str().c_str());
                 first_flag = true;
-                full_data->mmap_tick = std::make_shared<map<int64_t, MemQTick>>();
+                full_data->mmap_tick = std::make_shared<map<int64_t, MemQTickBody>>();
                 full_data->mmap_order = std::make_shared<map<int64_t, MemQOrder>>();
                 full_data->mmap_knock = std::make_shared<map<int64_t, MemQKnock>>();
                 data.insert(std::make_pair(std_code, full_data));
             } else {
                 full_data = it->second;
             }
-            MemQTick tick;
+            MemQTickBody tick;
             memset(&tick, 0, sizeof(tick));
             strncpy(tick.code, std_code.c_str(), std_code.length());
             tick.timestamp = timestamp;
@@ -369,46 +369,46 @@ namespace co {
         }
     }
 
-    void CompareOneCode::CompareContract(MemQContract* right, MemQContract* data) {
+    void CompareOneCode::CompareContract(MemQTickHead* right, MemQTickHead* data) {
         if (strcmp(right->underlying_code, data->underlying_code) != 0) {
-            LOG_ERROR << "MemQContract diff, underlying_code, right: " << right->underlying_code << ", new: " << data->underlying_code;
+            LOG_ERROR << "MemQTickHead diff, underlying_code, right: " << right->underlying_code << ", new: " << data->underlying_code;
         }
         if (fabs(right->pre_close - data->pre_close) > WUCAI) {
-            LOG_ERROR << "MemQContract diff, pre_close, right: " << right->pre_close << ", new: " << data->pre_close;
+            LOG_ERROR << "MemQTickHead diff, pre_close, right: " << right->pre_close << ", new: " << data->pre_close;
         }
         if (fabs(right->upper_limit - data->upper_limit) > WUCAI) {
-            LOG_ERROR << "MemQContract diff, upper_limit, right: " << right->upper_limit << ", new: " << data->upper_limit;
+            LOG_ERROR << "MemQTickHead diff, upper_limit, right: " << right->upper_limit << ", new: " << data->upper_limit;
         }
         if (fabs(right->lower_limit - data->lower_limit) > WUCAI) {
-            LOG_ERROR << "MemQContract diff, lower_limit, right: " << right->lower_limit << ", new: " << data->lower_limit;
+            LOG_ERROR << "MemQTickHead diff, lower_limit, right: " << right->lower_limit << ", new: " << data->lower_limit;
         }
         if (fabs(right->pre_settle - data->pre_settle) > WUCAI) {
-            LOG_ERROR << "MemQContract diff, pre_settle, right: " << right->pre_settle << ", new: " << data->pre_settle;
+            LOG_ERROR << "MemQTickHead diff, pre_settle, right: " << right->pre_settle << ", new: " << data->pre_settle;
         }
         if (right->pre_open_interest != data->pre_open_interest) {
-            LOG_ERROR << "MemQContract diff, pre_open_interest, right: " << right->pre_open_interest << ", new: " << data->pre_open_interest;
+            LOG_ERROR << "MemQTickHead diff, pre_open_interest, right: " << right->pre_open_interest << ", new: " << data->pre_open_interest;
         }
         if (right->multiple != data->multiple) {
-            LOG_ERROR << "MemQContract diff, multiple, right: " << right->multiple << ", new: " << data->multiple;
+            LOG_ERROR << "MemQTickHead diff, multiple, right: " << right->multiple << ", new: " << data->multiple;
         }
         if (fabs(right->price_step - data->price_step) > WUCAI) {
-            LOG_ERROR << "MemQContract diff, price_step, right: " << right->price_step << ", new: " << data->price_step;
+            LOG_ERROR << "MemQTickHead diff, price_step, right: " << right->price_step << ", new: " << data->price_step;
         }
         if (right->market != data->market) {
-            LOG_ERROR << "MemQContract diff, market, right: " << right->market << ", new: " << data->market;
+            LOG_ERROR << "MemQTickHead diff, market, right: " << right->market << ", new: " << data->market;
         }
         if (right->dtype != data->dtype) {
-            LOG_ERROR << "MemQContract diff, dtype, right: " << right->dtype << ", new: " << data->dtype;
+            LOG_ERROR << "MemQTickHead diff, dtype, right: " << right->dtype << ", new: " << data->dtype;
         }
         if (right->cp_flag != data->cp_flag) {
-            LOG_ERROR << "MemQContract diff, cp_flag, right: " << right->cp_flag << ", new: " << data->cp_flag;
+            LOG_ERROR << "MemQTickHead diff, cp_flag, right: " << right->cp_flag << ", new: " << data->cp_flag;
         }
         if (right->volume_unit != data->volume_unit) {
-            LOG_ERROR << "MemQContract diff, volume_unit, right: " << right->volume_unit << ", new: " << data->volume_unit;
+            LOG_ERROR << "MemQTickHead diff, volume_unit, right: " << right->volume_unit << ", new: " << data->volume_unit;
         }
     }
 
-    void CompareOneCode::CompareTick(MemQTick* right, MemQTick* data) {
+    void CompareOneCode::CompareTick(MemQTickBody* right, MemQTickBody* data) {
         stringstream ss;
         ss << "tick code: " << right->code << ", timestamp: " << right->timestamp;
         for (int i = 0; i < 10; i++) {
@@ -565,7 +565,7 @@ namespace co {
             auto it = data.find(std_code);
             if (it == data.end()) {
                 full_data = std::make_shared<FullDate>();
-                memset(&full_data->contract, 0, sizeof(MemQContract));
+                memset(&full_data->contract, 0, sizeof(MemQTickHead));
                 strncpy(full_data->contract.code, std_code.c_str(), std_code.length());
                 full_data->contract.timestamp = timestamp;
                 full_data->contract.market = atoll(m[7].str().c_str());
@@ -586,7 +586,7 @@ namespace co {
                 full_data->contract.cp_flag = atol(m[19].str().c_str());
                 full_data->contract.volume_unit = atol(m[20].str().c_str());
 
-                full_data->mmap_tick = std::make_shared<map<int64_t, MemQTick>>();
+                full_data->mmap_tick = std::make_shared<map<int64_t, MemQTickBody>>();
                 full_data->mmap_order = std::make_shared<map<int64_t, MemQOrder>>();
                 full_data->mmap_knock = std::make_shared<map<int64_t, MemQKnock>>();
                 data.insert(std::make_pair(std_code, full_data));
@@ -621,7 +621,7 @@ namespace co {
             } else {
                 full_data = it->second;
             }
-            MemQTick tick;
+            MemQTickBody tick;
             memset(&tick, 0, sizeof(tick));
             strncpy(tick.code, std_code.c_str(), std_code.length());
             tick.timestamp = timestamp;
