@@ -300,6 +300,9 @@ namespace co {
 //                        }
                     }
                 }
+                //if (contract->dtype == co::kDTypeIndex && date == x::RawDate()) {
+                //     std::cout << ToString(contract) << std::endl;
+                //}
             } else if (type == kMemTypeQTickBody) {
                 MemQTickBody *tick = (MemQTickBody *) data;
                 string std_code = tick->code;
@@ -339,6 +342,7 @@ namespace co {
                     CheckSingleCodeData(&mem_tick, &full_data->contract);
                     full_data->mmap_tick->insert(std::make_pair(timestamp, mem_tick));
                 }
+                std::cout << ToString(tick) << std::endl;
             } else if (type == kMemTypeQOrder) {
                 MemQOrder *order = (MemQOrder *) data;
                 int64_t date = order->timestamp / 1000000000LL;
@@ -608,6 +612,9 @@ namespace co {
     void CompareAllCode::CompareContract(MemQTickHead* right, MemQTickHead* data) {
         stringstream ss;
         ss << "Contract code: " << right->code;
+        if (strcmp(right->name, data->name) != 0) {
+            ss << ", name, right: " << right->name << ", new: " << data->name;
+        }
         if (strcmp(right->underlying_code, data->underlying_code) != 0) {
             ss << ", underlying_code, right: " << right->underlying_code << ", new: " << data->underlying_code;
         }
