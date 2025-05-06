@@ -18,6 +18,7 @@ namespace co {
 
     struct FullDate {
         shared_ptr<map<int64_t, MemQTickBody>> mmap_tick;
+        shared_ptr<map<int64_t, MemQEtfTick>> mmap_etf;
         shared_ptr<map<string, MemQOrder>> mmap_order;  // key is order_no + "_" + order_type
         shared_ptr<map<int64_t, MemQKnock>> mmap_knock;
         MemQTickHead contract;
@@ -27,6 +28,7 @@ namespace co {
         int right_tick_num = 0;
         int new_tick_num = 0;
         int tick_diff = 0;
+        int etf_diff = 0;
         int tick_miss = 0;
         int order_diff = 0;
         int order_miss = 0;
@@ -45,6 +47,7 @@ namespace co {
 
         void CompareContract(MemQTickHead* right, MemQTickHead* data);
         void CompareTick(MemQTickBody* right, MemQTickBody* data);
+        void CompareEtf(MemQEtfTick* right, MemQEtfTick* data);
         void CompareOrder(MemQOrder* right, MemQOrder* data);
         void CompareKnock(MemQKnock* right, MemQKnock* data);
         bool IsNeedInstrument(const string& code);

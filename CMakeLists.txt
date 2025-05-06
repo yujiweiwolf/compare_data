@@ -2,10 +2,10 @@
 cmake_minimum_required(VERSION 3.16)
 project(compare_data)
 
-set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 SET(CMAKE_BUILD_TYPE "Debug")  # Release Debug
+add_compile_options(-std=c++17 -Wall -O2)
 
 message("*****************************************")
 find_package(X REQUIRED)
@@ -24,6 +24,12 @@ message("*****************************************")
 #aux_source_directory (./src/compare_one COMPAREONE)
 #add_executable(compare_one ${COMPAREONE})
 #target_link_libraries(compare_one ${FEEDER_LIBRARIES} ${CORAL_LIBRARIES} ${X_LIBRARIES} boost_program_options protobuf protobuf-lite)
+
+#add_executable(write src/test/write.cc)
+#target_link_libraries(write ${FEEDER_LIBRARIES} ${CORAL_LIBRARIES} ${X_LIBRARIES} boost_program_options protobuf protobuf-lite)
+#
+#add_executable(read src/test/read.cc)
+#target_link_libraries(read ${FEEDER_LIBRARIES} ${CORAL_LIBRARIES} ${X_LIBRARIES} boost_program_options protobuf protobuf-lite)
 
 SET(FEEDER compare_all_instrument)
 aux_source_directory (./src/compare_all COMPAREONE_ALL)

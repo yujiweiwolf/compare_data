@@ -342,7 +342,7 @@ namespace co {
                     CheckSingleCodeData(&mem_tick, &full_data->contract);
                     full_data->mmap_tick->insert(std::make_pair(timestamp, mem_tick));
                 }
-                std::cout << ToString(tick) << std::endl;
+                // std::cout << ToString(tick) << std::endl;
             } else if (type == kMemTypeQOrder) {
                 MemQOrder *order = (MemQOrder *) data;
                 int64_t date = order->timestamp / 1000000000LL;
@@ -360,7 +360,6 @@ namespace co {
 //                                 << "}";
 //                    }
                     full_data = it->second;
-                    int64_t order_no = order->order_no;
                     MemQOrder mem_order;
                     memcpy(&mem_order, order, sizeof(MemQOrder));
                     if (full_data->contract.volume_unit > 0) {
@@ -394,6 +393,16 @@ namespace co {
                     }
                     full_data->mmap_knock->insert(std::make_pair(match_no, mem_knock));
                 }
+            } else if (type == kMemTypeQEtfTick) {
+                MemQEtfTick *tick = (MemQEtfTick *) data;
+                string std_code = tick->code;
+                int64_t timestamp = tick->timestamp;
+                int64_t date = timestamp / 1000000000LL;
+                auto it = recode.find(std_code);
+                if (it != recode.end() && date == compare_date_) {
+                    full_data = it->second;
+                    full_data->mmap_etf->insert(std::make_pair(timestamp, *tick));
+                }
             } else if (type == 0) {
                 LOG_INFO << "stop read mmap file: " << dir;
                 break;
@@ -405,6 +414,7 @@ namespace co {
                      << ", upper_limit: " << it->second->contract.upper_limit
                      << ", lower_limit: " << it->second->contract.lower_limit
                      << ", tick num: " << it->second->mmap_tick->size()
+                     << ", etf num: " << it->second->mmap_etf->size()
                      << ", order num: " << it->second->mmap_order->size()
                      << ", knock num: " << it->second->mmap_knock->size();
             int64_t sum_volume = 0;
@@ -475,11 +485,13 @@ namespace co {
             }
             auto& right_contract = it->second->contract;
             auto right_tick = it->second->mmap_tick;
+            auto right_etf = it->second->mmap_etf;
             auto right_order = it->second->mmap_order;
             auto right_knock = it->second->mmap_knock;
 
             auto& new_contract = itor->second->contract;
             auto new_tick = itor->second->mmap_tick;
+            auto new_etf = itor->second->mmap_etf;
             auto new_order = itor->second->mmap_order;
             auto new_knock = itor->second->mmap_knock;
             shared_ptr<StatisticsData> statistics;
@@ -507,6 +519,23 @@ namespace co {
                         MemQTickBody& right_tick = iter->second;
                         MemQTickBody& new_tick = _it->second;
                         CompareTick(&right_tick, &new_tick);
+                    }
+                }
+            }
+            // 比较 ETF
+            {
+                for (auto iter = right_etf->begin(); iter != right_etf->end(); ++iter) {
+                    auto _it = new_etf->find(iter->first);
+                    if (_it == new_etf->end()) {
+                        statistics->etf_diff ++;
+                        if (statistics->etf_diff <= 10) {
+                            MemQEtfTick& etf = iter->second;
+                            LOG_TRACE << "miss etf tick, code: " << etf.code << ", timestamp: " << etf.timestamp;
+                        }
+                    } else {
+                        MemQEtfTick& right_etf = iter->second;
+                        MemQEtfTick& new_etf = _it->second;
+                        CompareEtf(&right_etf, &new_etf);
                     }
                 }
             }
@@ -612,8 +641,10 @@ namespace co {
     void CompareAllCode::CompareContract(MemQTickHead* right, MemQTickHead* data) {
         stringstream ss;
         ss << "Contract code: " << right->code;
-        if (strcmp(right->name, data->name) != 0) {
-            ss << ", name, right: " << right->name << ", new: " << data->name;
+        if (strlen(right->name) > 0 && strlen(data->name) > 0) {
+            if (strcmp(right->name, data->name) != 0) {
+                ss << ", name, right: " << right->name << ", new: " << data->name;
+            }
         }
         if (strcmp(right->underlying_code, data->underlying_code) != 0) {
             ss << ", underlying_code, right: " << right->underlying_code << ", new: " << data->underlying_code;
@@ -725,6 +756,53 @@ namespace co {
                 LOG_ERROR << ss.str();
             }
             statistics->tick_diff ++;
+        }
+    }
+
+    void CompareAllCode::CompareEtf(MemQEtfTick* right, MemQEtfTick* data) {
+        stringstream ss;
+        ss << "etf code: " << right->code << ", timestamp: " << right->timestamp;
+
+        if (right->new_create_count != data->new_create_count) {
+            ss << ", right new_create_count: " << right->new_create_count << ", new new_create_count: " << data->new_create_count;
+        }
+        if (right->new_create_volume != data->new_create_volume) {
+            ss << ", right new_create_volume: " << right->new_create_volume << ", new new_create_volume: " << data->new_create_volume;
+        }
+        if (right->sum_create_count != data->sum_create_count) {
+            ss << ", right sum_create_count: " << right->sum_create_count << ", new sum_create_count: " << data->sum_create_count;
+        }
+        if (right->sum_create_volume != data->sum_create_volume) {
+            ss << ", right sum_create_volume: " << right->sum_create_volume << ", new sum_create_volume: " << data->sum_create_volume;
+        }
+
+        if (right->new_redeem_count != data->new_redeem_count) {
+            ss << ", right new_redeem_count: " << right->new_redeem_count << ", new new_redeem_count: " << data->new_redeem_count;
+        }
+        if (right->new_redeem_volume != data->new_redeem_volume) {
+            ss << ", right new_redeem_volume: " << right->new_redeem_volume << ", new new_redeem_volume: " << data->new_redeem_volume;
+        }
+        if (right->sum_redeem_count != data->sum_redeem_count) {
+            ss << ", right sum_redeem_count: " << right->sum_redeem_count << ", new sum_redeem_count: " << data->sum_redeem_count;
+        }
+        if (right->sum_redeem_volume != data->sum_redeem_volume) {
+            ss << ", right sum_redeem_volume: " << right->sum_redeem_volume << ", new sum_redeem_volume: " << data->sum_redeem_volume;
+        }
+        string err_msg = ss.str();
+        if (err_msg.find("right") != err_msg.npos) {
+            string code = right->code;
+            shared_ptr<StatisticsData> statistics;
+            auto it = statistics_data_.find(code);
+            if (it == statistics_data_.end()) {
+                statistics = std::make_shared<StatisticsData>();
+                statistics_data_.insert(std::make_pair(code, statistics));
+            } else {
+                statistics = it->second;
+            }
+            if (statistics->etf_diff <= 10) {
+                LOG_ERROR << ss.str();
+            }
+            statistics->etf_diff ++;
         }
     }
 
