@@ -28,8 +28,9 @@ namespace co {
         int right_tick_num = 0;
         int new_tick_num = 0;
         int tick_diff = 0;
-        int etf_diff = 0;
         int tick_miss = 0;
+        int etf_diff = 0;
+        int etf_miss = 0;
         int order_diff = 0;
         int order_miss = 0;
         int knock_diff = 0;

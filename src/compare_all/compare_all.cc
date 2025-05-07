@@ -269,8 +269,8 @@ namespace co {
             compare_date_ = x::RawDate();
         }
         x::MMapReader feeder_reader_;
-        feeder_reader_.Open(dir, "meta");
-        feeder_reader_.Open(dir, "data");
+        feeder_reader_.Open(dir, "meta", false);
+        feeder_reader_.Open(dir, "data", false);
         shared_ptr<FullDate> full_data;
         const void* data = nullptr;
         while (true) {
@@ -288,6 +288,7 @@ namespace co {
                         full_data->mmap_tick = std::make_shared<map<int64_t, MemQTickBody>>();
                         full_data->mmap_order = std::make_shared<map<string, MemQOrder>>();
                         full_data->mmap_knock = std::make_shared<map<int64_t, MemQKnock>>();
+                        full_data->mmap_etf = std::make_shared<map<int64_t, MemQEtfTick>>();
                         recode.insert(std::make_pair(std_code, full_data));
                     } else {
                         full_data = it->second;
@@ -342,7 +343,6 @@ namespace co {
                     CheckSingleCodeData(&mem_tick, &full_data->contract);
                     full_data->mmap_tick->insert(std::make_pair(timestamp, mem_tick));
                 }
-                // std::cout << ToString(tick) << std::endl;
             } else if (type == kMemTypeQOrder) {
                 MemQOrder *order = (MemQOrder *) data;
                 int64_t date = order->timestamp / 1000000000LL;
@@ -413,10 +413,10 @@ namespace co {
             LOG_INFO << "code: " << it->first << ", static pre_close: " << it->second->contract.pre_close
                      << ", upper_limit: " << it->second->contract.upper_limit
                      << ", lower_limit: " << it->second->contract.lower_limit
-                     << ", tick num: " << it->second->mmap_tick->size()
-                     << ", etf num: " << it->second->mmap_etf->size()
-                     << ", order num: " << it->second->mmap_order->size()
-                     << ", knock num: " << it->second->mmap_knock->size();
+                     << ", tick num: " << (it->second->mmap_tick ? it->second->mmap_tick->size() : 0)
+                     << ", etf num: " << (it->second->mmap_etf ? it->second->mmap_etf->size() : 0)
+                     << ", order num: " << (it->second->mmap_order ? it->second->mmap_order->size() : 0)
+                     << ", knock num: " << (it->second->mmap_knock ? it->second->mmap_knock->size() : 0);
             int64_t sum_volume = 0;
             int64_t sum_amout = 0;
             for (auto& itor : *it->second->mmap_knock) {
@@ -511,7 +511,7 @@ namespace co {
                     auto _it = new_tick->find(iter->first);
                     if (_it == new_tick->end()) {
                         statistics->tick_miss ++;
-                        if (statistics->order_miss <= 10) {
+                        if (statistics->tick_miss <= 10) {
                             MemQTickBody& tick = iter->second;
                             LOG_TRACE << "miss tick, code: " << tick.code << ", timestamp: " << tick.timestamp;
                         }
@@ -524,18 +524,20 @@ namespace co {
             }
             // 比较 ETF
             {
-                for (auto iter = right_etf->begin(); iter != right_etf->end(); ++iter) {
-                    auto _it = new_etf->find(iter->first);
-                    if (_it == new_etf->end()) {
-                        statistics->etf_diff ++;
-                        if (statistics->etf_diff <= 10) {
-                            MemQEtfTick& etf = iter->second;
-                            LOG_TRACE << "miss etf tick, code: " << etf.code << ", timestamp: " << etf.timestamp;
+                if (right_etf && new_etf) {
+                    for (auto iter = right_etf->begin(); iter != right_etf->end(); ++iter) {
+                        auto _it = new_etf->find(iter->first);
+                        if (_it == new_etf->end()) {
+                            statistics->etf_miss ++;
+                            if (statistics->etf_miss <= 10) {
+                                MemQEtfTick& etf = iter->second;
+                                LOG_TRACE << "miss etf tick, code: " << etf.code << ", timestamp: " << etf.timestamp;
+                            }
+                        } else {
+                            MemQEtfTick& right_etf = iter->second;
+                            MemQEtfTick& new_etf = _it->second;
+                            CompareEtf(&right_etf, &new_etf);
                         }
-                    } else {
-                        MemQEtfTick& right_etf = iter->second;
-                        MemQEtfTick& new_etf = _it->second;
-                        CompareEtf(&right_etf, &new_etf);
                     }
                 }
             }
@@ -621,6 +623,8 @@ namespace co {
                     << ", new_tick_num: " << it->second->new_tick_num
                     << ", tick_diff: " << it->second->tick_diff
                     << ", tick_miss: " << it->second->tick_miss
+                    << ", etf_diff: " << it->second->etf_diff
+                    << ", etf_miss: " << it->second->etf_miss
                     << ", order_diff: " << it->second->order_diff
                     << ", order_miss: " << it->second->order_miss
                     << ", knock_diff: " << it->second->knock_diff
