@@ -24,7 +24,7 @@ compare_all:
   right_data: /home/work/sys/develop/feeder_huatai_insight/data/feed.stock.mem
   #right_data: /home/work/sys/develop/compare_data/data/feed_20241021_20241022143734597.stock.wal
   # 新数据
-  new_data: /home/work/sys/develop/feeder_huatai_insight/data/feed.stock.mem
+  new_data: /home/work/sys/develop/feeder_dwzq_wind/data/feed.stock.mem
   # 比较合约,必须包含深圳上海的股票、指数、基金、债券、期权、CNI、CSI, 其中债券与期权的代码有变化，每次比较时可能要调整
   # 空值的话， 就是全市场比较
   # compare_instrument:

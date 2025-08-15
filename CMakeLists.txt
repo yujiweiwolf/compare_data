@@ -5,7 +5,8 @@ project(compare_data)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 SET(CMAKE_BUILD_TYPE "Debug")  # Release Debug
-add_compile_options(-std=c++17 -Wall -O2)
+#add_compile_options(-std=c++17 -Wall -O2)
+add_compile_options(-std=c++17)
 
 message("*****************************************")
 find_package(X REQUIRED)
@@ -25,11 +26,8 @@ message("*****************************************")
 #add_executable(compare_one ${COMPAREONE})
 #target_link_libraries(compare_one ${FEEDER_LIBRARIES} ${CORAL_LIBRARIES} ${X_LIBRARIES} boost_program_options protobuf protobuf-lite)
 
-#add_executable(write src/test/write.cc)
-#target_link_libraries(write ${FEEDER_LIBRARIES} ${CORAL_LIBRARIES} ${X_LIBRARIES} boost_program_options protobuf protobuf-lite)
-#
-#add_executable(read src/test/read.cc)
-#target_link_libraries(read ${FEEDER_LIBRARIES} ${CORAL_LIBRARIES} ${X_LIBRARIES} boost_program_options protobuf protobuf-lite)
+add_executable(code_index src/code_index/code_index.cc src/code_index/test_code_index.cc)
+target_link_libraries(code_index gtest gtest_main x stdc++fs yaml-cpp clickhouse-cpp-lib-static boost_date_time boost_filesystem boost_regex boost_system  boost_chrono boost_log boost_program_options boost_thread boost_iostreams z protobuf protobuf-lite sodium zmq ssl crypto iconv pthread dl)
 
 SET(FEEDER compare_all_instrument)
 aux_source_directory (./src/compare_all COMPAREONE_ALL)

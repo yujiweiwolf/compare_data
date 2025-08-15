@@ -413,6 +413,7 @@ namespace co {
             LOG_INFO << "code: " << it->first << ", static pre_close: " << it->second->contract.pre_close
                      << ", upper_limit: " << it->second->contract.upper_limit
                      << ", lower_limit: " << it->second->contract.lower_limit
+                     << ", volume_unit: " << it->second->contract.volume_unit
                      << ", tick num: " << (it->second->mmap_tick ? it->second->mmap_tick->size() : 0)
                      << ", etf num: " << (it->second->mmap_etf ? it->second->mmap_etf->size() : 0)
                      << ", order num: " << (it->second->mmap_order ? it->second->mmap_order->size() : 0)
@@ -689,9 +690,9 @@ namespace co {
         if (right->cp_flag != data->cp_flag) {
             ss << ", cp_flag, right: " << right->cp_flag << ", new: " << data->cp_flag;
         }
-//        if (right->volume_unit != data->volume_unit) {
-//            ss << ", volume_unit, right: " << right->volume_unit << ", new: " << data->volume_unit;
-//        }
+        if (right->volume_unit != data->volume_unit) {
+            ss << ", volume_unit, right: " << right->volume_unit << ", new: " << data->volume_unit;
+        }
         string err_msg = ss.str();
         if (err_msg.find("right") != err_msg.npos) {
             LOG_ERROR << ss.str();
@@ -722,13 +723,13 @@ namespace co {
             ss << ", right new_volume: " << right->new_volume << ", new new_volume: " << data->new_volume;
         }
         if (fabs(right->new_amount - data->new_amount) > 10.0) {
-            ss << ", right new_amount: " << right->new_amount << ", new new_amount: " << data->new_amount;
+            ss << ", right new_amount: " << right->new_amount << ", new new_amount: " << data->new_amount << ", diff: " << fabs(right->new_amount - data->new_amount);
         }
         if (right->sum_volume != data->sum_volume) {
             ss << ", right sum_volume: " << right->sum_volume << ", new sum_volume: " << data->sum_volume;
         }
         if (fabs(right->sum_amount - data->sum_amount) > 10.0) {
-            ss << ", right sum_amount: " << right->sum_amount << ", new sum_amount: " << data->sum_amount;
+            ss << ", right sum_amount: " << right->sum_amount << ", new sum_amount: " << data->sum_amount << ", diff: " << fabs(right->sum_amount - data->sum_amount);
         }
         if (right->open_interest != data->open_interest) {
             ss << ", right open_interest: " << right->open_interest << ", new open_interest: " << data->open_interest;
